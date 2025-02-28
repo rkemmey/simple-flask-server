@@ -1,4 +1,6 @@
 from flask import Flask, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 students = [
      {'id': '1', 'first_name': 'John', 'last_name': 'Doe', 'age': 18, 'grade': 'A'},
@@ -13,36 +15,68 @@ students = [
      {'id': '10', 'first_name': 'Isabella', 'last_name': 'Moore', 'age': 22, 'grade': 'B'}
  ]
 
-app = Flask('app')
+app = Flask(__name__)
+CORS(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+psycopg://rkemmey:hi@localhost/students"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+class Students(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(20))
+    last_name = db.Column(db.String(20))
+    age = db.Column(db.Integer)
+    grade = db.Column(db.String(1))
+
+    def __repr__(self):
+        return self.first_name
 
 # returns all student objects 
 @app.route('/students/', methods=['GET'])
 def get_students():
-    return jsonify(students)
+    students = Students.query.all()
+    formatted_students = []
+    for stud in students:
+        formatted_students.append(
+            {
+                "id": stud.id,
+                "first_name": stud.first_name,
+                "last_name": stud.last_name,
+                "age": stud.age,
+                "grade": stud.grade
+            }
+        )
+    return jsonify(formatted_students)
 
-# returns students > 20 years old
-@app.route('/old_students/', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# # returns students > 20 years old
+# @app.route('/old_students/', methods=['GET'])
+# def get_students():
+#     return jsonify(students)
 
-# returns students < 21 years old
-@app.route('/young_students/', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# # returns students < 21 years old
+# @app.route('/young_students/', methods=['GET'])
+# def get_students():
+#     return jsonify(students)
 
-# returns students < 21 years old and grade = A
-@app.route('/advance_students/', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# # returns students < 21 years old and grade = A
+# @app.route('/advance_students/', methods=['GET'])
+# def get_students():
+#     return jsonify(students)
 
-# returns first_name, last_name
-@app.route('/student_names/', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# # returns first_name, last_name
+# @app.route('/student_names/', methods=['GET'])
+# def get_students():
+#     return jsonify(students)
 
-# returns student_name + age
-@app.route('/student_ages/', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# # returns student_name + age
+# @app.route('/student_ages/', methods=['GET'])
+# def get_students():
+#     return jsonify(students)
 
-app.run(debug=True, port=8000)
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()  # Create tables if they don't exist
+    app.run(debug=True, port=8000)
+
+#app.run(debug=True, port=8000)
